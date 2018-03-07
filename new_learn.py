@@ -124,7 +124,6 @@ def atari_learn(env,
             break
 
         ### 2. Step the env and store the transition
-        #####
         idx = replay_buffer.store_frame(state)
         q_input = replay_buffer.encode_recent_observation()
 
@@ -253,10 +252,9 @@ def old_learn(env, q_func, optimizer_spec, density, cnn_kwargs, config,
     in_channel = input_shape[-1]
     Q = q_func(in_channel, num_actions)
     target_Q = deepcopy(Q)
-    c = 0.1
 
-    # call tensorflow wrapper to get density model --> eventually incorporate c to FLAGS
-    pixel_bonus = density(FLAGS=cnn_kwargs, c=c)
+    # call tensorflow wrapper to get density model
+    pixel_bonus = density(FLAGS=cnn_kwargs)
 
     if USE_CUDA:
         Q.cuda()
@@ -345,6 +343,7 @@ def old_learn(env, q_func, optimizer_spec, density, cnn_kwargs, config,
         reward += intrinsic_reward
         # clip reward to be in [-1, +1] once again
         reward = max(-1.0, min(reward, 1.0))
+        assert -1.0 <= reward <= 1.0
 
         # if t % 10000 == 0:
         #     # look at a sample generated image after 10000 timesteps

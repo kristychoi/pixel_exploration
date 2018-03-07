@@ -1,6 +1,8 @@
 import cv2
+from math import pow, exp
 from tf_pixelcnn.models import PixelCNN
 from tf_pixelcnn.layers import *
+import logging
 
 
 class DotDict(object):
@@ -48,7 +50,7 @@ class PixelBonus(object):
     """
     Tensorflow wrapper for PixelCNN model and exploration bonus; borrowed implementation
     """
-    def __init__(self, FLAGS, c):
+    def __init__(self, FLAGS):
         # init model
         self.X = tf.placeholder(
             tf.float32,
@@ -60,11 +62,7 @@ class PixelBonus(object):
             learning_rate=1e-3,decay=0.95,momentum=0.9).minimize(self.model.loss)
         self.sess = tf.Session()
         self.sess.run(tf.global_variables_initializer())
-
-        # avoid numeric overflow; perturb
-        self.max_val = np.finfo(np.float32).max - 1e-10
         self.frame_shape = (FLAGS.img_height, FLAGS.img_width)
-        self.c = c
 
     def bonus(self, obs, t):
         """
@@ -88,13 +86,13 @@ class PixelBonus(object):
         # compute prediction gain
         pred_gain = max(0, log_recoding_prob - log_prob)
 
-        # compute intrinsic reward
-        # N_hat = 1. / (np.exp(c * (n ** (-0.5)) * pred_gain) - 1)
-        # intrinsic_reward = (N_hat) ** (-0.5)
-        exponentiate = min(self.c * ((t + 1) ** (-0.5)) * pred_gain, np.log(self.max_val))
-        inv_Nhat = (np.exp(exponentiate) - 1)
-        # double negative exponents cancel out
-        intrinsic_reward = inv_Nhat ** (0.5)
+        # save log loss
+        nll = self.sess.run(self.model.nll, feed_dict={self.X: frame})
+        logging.info('log loss: {}'.format(nll))
+
+        # compute intrinsic reward --> c = 0.1
+        inv_Nhat = exp(0.1 * (pow(t + 1, -0.5) * pred_gain) - 1)
+        intrinsic_reward = pow(inv_Nhat, 0.5)
 
         return intrinsic_reward
 
