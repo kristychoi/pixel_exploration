@@ -8,11 +8,11 @@ class Config():
     output_path = "results/dqn_pong/"
     # todo: actually do model checkpointing and logging
     model_output = output_path + "model.weights/"
-    log_path = output_path + "pixel_log.txt"
+    log_path = output_path + "bankheist_pixel_log.txt"
     plot_output = output_path + "scores.png"
 
     # environment
-    env_name = "PongNoFrameskip-v4"
+    env_name = "BankHeistNoFrameskip-v4"
     deep = True
     clip_grad = True
 
@@ -21,10 +21,8 @@ class Config():
     # save_freq = 5000
     downsample = False  # specific to exploration bonus
 
-    # todo: original hyperparameters; table this for now
     frame_history_len = 4
     replay_buffer_size = 1000000
-
     max_timesteps = 40000000
 
     learning_starts = 50000

@@ -194,7 +194,8 @@ def wrap_deepmind(env):
     if 'FIRE' in env.unwrapped.get_action_meanings():
         env = FireResetEnv(env)
     env = ProcessFrame84(env)
-    env = ClippedRewardsWrapper(env)
+    # todo: don't clip rewards for other games (e.g. not pong)
+    # env = ClippedRewardsWrapper(env)
     return env
 
 

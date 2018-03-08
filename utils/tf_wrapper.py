@@ -60,9 +60,14 @@ class PixelBonus(object):
         # init optimizer
         self.optimizer = tf.train.RMSPropOptimizer(
             learning_rate=1e-3,decay=0.95,momentum=0.9).minimize(self.model.loss)
-        self.sess = tf.Session()
+
+        # make sure GPU doesn't use all of the available memory
+        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.333)
+        self.sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
+
         self.sess.run(tf.global_variables_initializer())
         self.frame_shape = (FLAGS.img_height, FLAGS.img_width)
+        self.max_val = np.finfo(np.float32).max - 1e-10
 
     def bonus(self, obs, t):
         """
@@ -88,11 +93,16 @@ class PixelBonus(object):
 
         # save log loss
         nll = self.sess.run(self.model.nll, feed_dict={self.X: frame})
-        logging.info('log loss: {}'.format(nll))
 
         # compute intrinsic reward --> c = 0.1
-        inv_Nhat = exp(0.1 * (pow(t + 1, -0.5) * pred_gain) - 1)
-        intrinsic_reward = pow(inv_Nhat, 0.5)
+        # exponentiate = min(0.1 * ((t + 1) ** (-0.5)) * pred_gain, np.log(self.max_val))
+        # exponentiate = min(0.1 * ((t + 1) ** (-0.5)) * pred_gain, self.max_val)
+        # inv_Nhat = (np.exp(exponentiate) - 1)
+        # intrinsic_reward = inv_Nhat ** 0.5
+        # inv_Nhat = exp(0.1 * (pow(t + 1, -0.5) * pred_gain) - 1)
+        # intrinsic_reward = pow(inv_Nhat, 0.5)
+
+        intrinsic_reward = pow((exp(0.1*pow(t + 1, -0.5) * pred_gain) - 1), 0.5)
 
         return intrinsic_reward
 
