@@ -17,10 +17,6 @@ class DQN(nn.Module):
         self.fc4 = nn.Linear(7 * 7 * 64, 512)
         self.fc5 = nn.Linear(512, n_actions)
 
-    def random_exploration(self):
-        # don't want to do e-greedy when using intrinsic reward model
-        return False
-
     def forward(self, x):
         """
         runs forward propagation of vanilla DQN

@@ -256,7 +256,8 @@ def old_learn(env, q_func, optimizer_spec, density, cnn_kwargs, config,
     target_Q = deepcopy(Q)
 
     # call tensorflow wrapper to get density model
-    pixel_bonus = density(FLAGS=cnn_kwargs)
+    if config.bonus:
+        pixel_bonus = density(FLAGS=cnn_kwargs)
 
     if USE_CUDA:
         Q.cuda()
@@ -287,7 +288,10 @@ def old_learn(env, q_func, optimizer_spec, density, cnn_kwargs, config,
     optimizer = optimizer_spec.constructor(Q.parameters(), **optimizer_spec.kwargs)
 
     # construct the replay buffer
-    replay_buffer = MMCReplayBuffer(config.replay_buffer_size, config.frame_history_len)
+    if config.mmc:
+        replay_buffer = MMCReplayBuffer(config.replay_buffer_size, config.frame_history_len)
+    else:
+        replay_buffer = ReplayBuffer(config.replay_buffeR_size, config.frame_history_len)
 
     ###############
     # RUN ENV     #
@@ -337,15 +341,16 @@ def old_learn(env, q_func, optimizer_spec, density, cnn_kwargs, config,
 
         ###############################################
         # todo: do density model stuff here
-        intrinsic_reward = pixel_bonus.bonus(obs, t)
-        if t % config.log_freq == 0:
-            logging.info('t: {}\t intrinsic reward: {}'.format(t, intrinsic_reward))
+        if config.bonus:
+            intrinsic_reward = pixel_bonus.bonus(obs, t)
+            if t % config.log_freq == 0:
+                logging.info('t: {}\t intrinsic reward: {}'.format(t, intrinsic_reward))
 
-        # add intrinsic reward to clipped reward
-        reward += intrinsic_reward
-        # clip reward to be in [-1, +1] once again
-        reward = max(-1.0, min(reward, 1.0))
-        assert -1.0 <= reward <= 1.0
+            # add intrinsic reward to clipped reward
+            reward += intrinsic_reward
+            # clip reward to be in [-1, +1] once again
+            reward = max(-1.0, min(reward, 1.0))
+            assert -1.0 <= reward <= 1.0
         ################################################
 
         # store reward in list to use for calculating MMC update
@@ -354,24 +359,25 @@ def old_learn(env, q_func, optimizer_spec, density, cnn_kwargs, config,
 
         # reset environment when reaching episode boundary
         if done:
-            # episode has terminated --> need to do MMC update here
-            # loop through all transitions of this past episode and add in mc_returns
-            assert len(timesteps_in_buffer) == len(reward_each_timestep)
-            mc_returns = np.zeros(len(timesteps_in_buffer))
+            # only if computing MC return
+            if config.mmc:
+                # episode has terminated --> need to do MMC update here
+                # loop through all transitions of this past episode and add in mc_returns
+                assert len(timesteps_in_buffer) == len(reward_each_timestep)
+                mc_returns = np.zeros(len(timesteps_in_buffer))
 
-            # compute mc returns
-            r = 0
-            for i in reversed(range(len(mc_returns))):
-                r = reward_each_timestep[i] + config.gamma * r
-                mc_returns[i] = r
+                # compute mc returns
+                r = 0
+                for i in reversed(range(len(mc_returns))):
+                    r = reward_each_timestep[i] + config.gamma * r
+                    mc_returns[i] = r
 
-            # populate replay buffer
-            for j in range(len(mc_returns)):
-                # get transition tuple in reward buffer and update
-                update_idx = episode_indices_in_buffer[j]
-                # put mmc return back into replay buffer
-                replay_buffer.mc_return_t[update_idx] = mc_returns[j]
-
+                # populate replay buffer
+                for j in range(len(mc_returns)):
+                    # get transition tuple in reward buffer and update
+                    update_idx = episode_indices_in_buffer[j]
+                    # put mmc return back into replay buffer
+                    replay_buffer.mc_return_t[update_idx] = mc_returns[j]
             # reset because end of episode
             episode_indices_in_buffer = []
             timesteps_in_buffer = []
@@ -390,8 +396,14 @@ def old_learn(env, q_func, optimizer_spec, density, cnn_kwargs, config,
         # perform training
         if (t > config.learning_starts and t % config.learning_freq == 0 and
                 replay_buffer.can_sample(config.batch_size)):
-            # sample batch of transitions --> also grab MMC batch
-            obs_batch, act_batch, rew_batch, next_obs_batch, done_mask, mc_batch = \
+
+            # sample batch of transitions --> also grab MMC batch if computing MMC return
+            if config.mmc:
+                obs_batch, act_batch, rew_batch, next_obs_batch, done_mask, mc_batch = \
+                replay_buffer.sample(config.batch_size)
+                mc_batch = Variable(torch.from_numpy(mc_batch).type(FloatTensor))
+            else:
+                obs_batch, act_batch, rew_batch, next_obs_batch, done_mask = \
                 replay_buffer.sample(config.batch_size)
 
             # convert variables to torch tensor variables
@@ -401,17 +413,14 @@ def old_learn(env, q_func, optimizer_spec, density, cnn_kwargs, config,
             rew_batch = Variable(torch.from_numpy(rew_batch).type(FloatTensor))
             next_obs_batch = Variable(torch.from_numpy(next_obs_batch).type(FloatTensor)/255.0)
             not_done_mask = Variable(torch.from_numpy(1 - done_mask).type(FloatTensor))
-            mc_batch = Variable(torch.from_numpy(mc_batch).type(FloatTensor))
 
-            # 3.c: train the model
-            # perform gradient step and update the network parameters
+            # 3.c: train the model: perform gradient step and update the network
             # this returns [32, 18] --> [32 x 1]
             # i squeezed this so that it'll give me [32]
             current_Q_values = Q(obs_batch).gather(1, act_batch.unsqueeze(1)).squeeze()
 
             # goes from [32, 18] --> [32]
             # this gives you a FloatTensor of size 32 // gives values of max
-
             next_max_q = target_Q(next_obs_batch).detach().max(1)[0]
 
             # torch.FloatTensor of size 32
@@ -419,12 +428,16 @@ def old_learn(env, q_func, optimizer_spec, density, cnn_kwargs, config,
 
             # this is [r(x,a) + gamma * max_a' Q(x', a')]
             target_Q_values = rew_batch + (config.gamma * next_Q_values)
-            # mixed MC update would be:
-            mixed_target_Q_values = (config.beta * target_Q_values) + (1 - config.beta)\
-                                    * mc_batch
 
-            # replace target_Q_values with mixed target
-            bellman_err = mixed_target_Q_values - current_Q_values
+            if config.mmc:
+                # mixed MC update would be: todo: flipped beta/1-beta from paper
+                mixed_target_Q_values = (config.beta * target_Q_values) + (1 - config.beta)* mc_batch
+                # replace target_Q_values with mixed target
+                bellman_err = mixed_target_Q_values - current_Q_values
+            else:
+                bellman_err = target_Q_values - current_Q_values
+
+            # clip gradient
             clipped_bellman_err = bellman_err.clamp(-1, 1)
 
             d_err = clipped_bellman_err * -1.0

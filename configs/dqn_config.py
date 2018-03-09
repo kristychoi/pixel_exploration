@@ -19,7 +19,6 @@ class Config():
     # model and train config
     log_freq = 5000
     # save_freq = 5000
-    downsample = False  # specific to exploration bonus
 
     frame_history_len = 4
     replay_buffer_size = 1000000
@@ -38,5 +37,7 @@ class Config():
     # alpha = 0.95
     epsilon = 1e-2
 
-    # exploration bonus
-    bonus = False
+    # epsilon-greedy
+    egreedy_exploration = False
+    mmc = True
+    bonus = True
