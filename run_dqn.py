@@ -13,20 +13,12 @@ import utils
 from utils.gym_atari_wrappers import get_env, get_wrapper_by_name
 from utils.schedule import LinearSchedule
 from configs.dqn_config import Config
-from new_learn import OptimizerSpec, old_learn, atari_learn
+from new_learn import OptimizerSpec, old_learn
 from utils.tf_wrapper import PixelBonus
 
 # do logging
 # logger = logging.getLogger(__name__)
 # logger.addHandler(logging.StreamHandler(sys.stderr))
-
-# use GPU if available
-# USE_CUDA = torch.cuda.is_available()
-USE_CUDA = True
-FloatTensor = torch.cuda.FloatTensor if USE_CUDA else torch.FloatTensor
-LongTensor = torch.cuda.LongTensor if USE_CUDA else torch.LongTensor
-ByteTensor = torch.cuda.ByteTensor if USE_CUDA else torch.ByteTensor
-Tensor = FloatTensor
 
 
 def print_key_pairs(v, title="Parameters"):

@@ -67,7 +67,7 @@ class PixelBonus(object):
 
         self.sess.run(tf.global_variables_initializer())
         self.frame_shape = (FLAGS.img_height, FLAGS.img_width)
-        self.max_val = np.finfo(np.float32).max - 1e-10
+        # self.max_val = np.finfo(np.float32).max - 1e-10
 
     def bonus(self, obs, t):
         """
@@ -92,16 +92,9 @@ class PixelBonus(object):
         pred_gain = max(0, log_recoding_prob - log_prob)
 
         # save log loss
-        nll = self.sess.run(self.model.nll, feed_dict={self.X: frame})
+        # nll = self.sess.run(self.model.nll, feed_dict={self.X: frame})
 
-        # compute intrinsic reward --> c = 0.1
-        # exponentiate = min(0.1 * ((t + 1) ** (-0.5)) * pred_gain, np.log(self.max_val))
-        # exponentiate = min(0.1 * ((t + 1) ** (-0.5)) * pred_gain, self.max_val)
-        # inv_Nhat = (np.exp(exponentiate) - 1)
-        # intrinsic_reward = inv_Nhat ** 0.5
-        # inv_Nhat = exp(0.1 * (pow(t + 1, -0.5) * pred_gain) - 1)
-        # intrinsic_reward = pow(inv_Nhat, 0.5)
-
+        # calculate intrinsic reward
         intrinsic_reward = pow((exp(0.1*pow(t + 1, -0.5) * pred_gain) - 1), 0.5)
 
         return intrinsic_reward

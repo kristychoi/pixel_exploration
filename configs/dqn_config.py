@@ -5,10 +5,10 @@ Config file for DQN on Atari 2600 suite
 
 class Config():
     # output config
-    output_path = "results/dqn_pong/"
+    output_path = "results/dqn_bankheist/"
     # todo: actually do model checkpointing and logging
     model_output = output_path + "model.weights/"
-    log_path = output_path + "bankheist_pixel_log.txt"
+    log_path = output_path + "pixel_log.txt"
     plot_output = output_path + "scores.png"
 
     # environment
