@@ -12,6 +12,7 @@ from utils.updated_replay import ReplayBuffer, MMCReplayBuffer
 from utils.schedule import LinearSchedule
 from utils.gym_atari_wrappers import get_wrapper_by_name
 from torch.autograd import Variable
+import pickle
 import logging
 
 
@@ -19,7 +20,8 @@ OptimizerSpec = namedtuple("OptimizerSpec", ["constructor", "kwargs"])
 
 Statistic = {
     "mean_episode_rewards": [],
-    "best_mean_episode_rewards": []
+    "best_mean_episode_rewards": [],
+    "episode_rewards": []
 }
 
 
@@ -268,7 +270,7 @@ def old_learn(env, q_func, optimizer_spec, density, cnn_kwargs, config,
         :param t:
         :return:
         """
-        if model.random_exploration():
+        if config.egreedy_exploration:
             sample = random.random()
             eps_threshold = exploration.value(t)
             if sample > eps_threshold:
@@ -344,16 +346,7 @@ def old_learn(env, q_func, optimizer_spec, density, cnn_kwargs, config,
         # clip reward to be in [-1, +1] once again
         reward = max(-1.0, min(reward, 1.0))
         assert -1.0 <= reward <= 1.0
-
-        # if t % 10000 == 0:
-        #     # look at a sample generated image after 10000 timesteps
-        #     generate_samples(density.sess, density.X, density.model.h,
-        #                              density.model.pred, cnn_kwargs, "_t_{}".format(t))
-        #     # save original input
-        #     fname = 'atari_t{}_loss{}'.format(t, logloss_n) + '.png'
-        #     scipy.misc.toimage(obs[:,:,-1]/7., cmin=0.0, cmax=1.0).save(os.path.join(
-        #         density.flags.samples_path, fname))
-        ###############################################
+        ################################################
 
         # store reward in list to use for calculating MMC update
         reward_each_timestep.append(reward)
@@ -437,7 +430,7 @@ def old_learn(env, q_func, optimizer_spec, density, cnn_kwargs, config,
             d_err = clipped_bellman_err * -1.0
             optimizer.zero_grad()
 
-            # todo: that design decision will affect this backward propagation
+            # design decision will affect this backward propagation
             current_Q_values.backward(d_err.data)
             # current_Q_values.backward(d_err.data.unsqueeze(1))
 
@@ -459,6 +452,7 @@ def old_learn(env, q_func, optimizer_spec, density, cnn_kwargs, config,
             # save statistics
             Statistic["mean_episode_rewards"].append(mean_episode_reward)
             Statistic["best_mean_episode_rewards"].append(best_mean_episode_reward)
+            Statistic["episode_rewards"].append(episode_rewards)
 
             if t % config.log_freq == 0 and t > config.learning_starts:
                 logging.info("Timestep %d" % (t,))
@@ -467,3 +461,8 @@ def old_learn(env, q_func, optimizer_spec, density, cnn_kwargs, config,
                 logging.info("episodes %d" % len(episode_rewards))
                 logging.info("exploration %f" % exploration.value(t))
                 sys.stdout.flush()
+
+                # Dump statistics to pickle
+            if t % 1000000 == 0 and t > config.learning_starts:
+                with open(config.output_path + 'statistics.pkl', 'wb') as f:
+                    pickle.dump(Statistic, f)
