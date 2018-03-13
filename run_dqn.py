@@ -77,7 +77,8 @@ def main(config, env):
     def stopping_criterion(env, t):
         # t := number of steps of wrapped env
         # different from number of steps in underlying env
-        return get_wrapper_by_name(env, "Monitor").get_total_steps() >= 40000000
+        return get_wrapper_by_name(env, "Monitor").get_total_steps() >= \
+               config.max_timesteps
 
     optimizer_spec = OptimizerSpec(
         constructor=torch.optim.Adam,
