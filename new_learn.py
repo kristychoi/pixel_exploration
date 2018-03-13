@@ -291,7 +291,7 @@ def old_learn(env, q_func, optimizer_spec, density, cnn_kwargs, config,
     if config.mmc:
         replay_buffer = MMCReplayBuffer(config.replay_buffer_size, config.frame_history_len)
     else:
-        replay_buffer = ReplayBuffer(config.replay_buffeR_size, config.frame_history_len)
+        replay_buffer = ReplayBuffer(config.replay_buffer_size, config.frame_history_len)
 
     ###############
     # RUN ENV     #

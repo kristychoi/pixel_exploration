@@ -5,7 +5,7 @@ Config file for DQN on Atari 2600 suite
 
 class Config():
     # output config
-    output_path = "results/dqn_bankheist/"
+    output_path = "results/dqn_asteroids/"
     # todo: actually do model checkpointing and logging
     model_output = output_path + "model.weights/"
     log_path = output_path + "pixel_log.txt"
@@ -22,7 +22,7 @@ class Config():
 
     frame_history_len = 4
     replay_buffer_size = 1000000
-    max_timesteps = 40000000
+    max_timesteps = 60000000
 
     learning_starts = 50000
     batch_size = 32
