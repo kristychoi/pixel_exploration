@@ -9,7 +9,6 @@ class Config():
     # todo: actually do model checkpointing and logging
     model_output = output_path + "model.weights/"
     log_path = output_path + "pixel_log.txt"
-    plot_output = output_path + "scores.png"
 
     # environment
     env_name = "BankHeistNoFrameskip-v4"
@@ -20,21 +19,22 @@ class Config():
     log_freq = 5000
     # save_freq = 5000
 
-    frame_history_len = 4
-    replay_buffer_size = 1000000
-    max_timesteps = 60000000
-
-    learning_starts = 50000
+    # hyperparams
     batch_size = 32
-    target_update_freq = 4
+    replay_buffer_size = 1000000
+    frame_history_len = 4
+    target_update_freq = 10000
     gamma = 0.99
     learning_freq = 4
-    beta = 0.8  # MMC
 
     # others
+    max_timesteps = 60000000
+    learning_starts = 50000
+    beta = 0.8  # MMC
+
+    # optimizer
     learning_rate = 0.00025
-    # lr_multiplier = 1.0
-    # alpha = 0.95
+    momentum = 0.95
     epsilon = 1e-2
 
     # epsilon-greedy
