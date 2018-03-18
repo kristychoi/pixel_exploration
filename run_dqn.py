@@ -13,7 +13,7 @@ import utils
 from utils.gym_atari_wrappers import get_env, get_wrapper_by_name
 from utils.schedule import LinearSchedule
 from configs.dqn_config import Config
-from new_learn import OptimizerSpec, old_learn
+from learn import OptimizerSpec, old_learn
 from utils.tf_wrapper import PixelBonus
 
 # do logging
