@@ -13,7 +13,7 @@ import utils
 from utils.gym_atari_wrappers import get_env, get_wrapper_by_name
 from utils.schedule import LinearSchedule
 from configs.dqn_config import Config
-from learn import OptimizerSpec, dqn_learn
+from learn import OptimizerSpec, dqn_learn, test_dqn_learning
 from utils.tf_wrapper import PixelBonus
 
 # do logging
@@ -80,18 +80,23 @@ def main(config, env):
         return get_wrapper_by_name(env, "Monitor").get_total_steps() >= \
                config.max_timesteps
 
-    optimizer_spec = OptimizerSpec(
-        constructor=torch.optim.Adam,
-        kwargs=dict(lr=config.learning_rate, eps=config.epsilon),
-    )
     # optimizer_spec = OptimizerSpec(
-    #     constructor=torch.optim.RMSprop,
-    #     kwargs=dict(lr=config.learning_rate, momentum=config.momentum, eps=config.epsilon)
+    #     constructor=torch.optim.Adam,
+    #     kwargs=dict(lr=config.learning_rate, eps=config.epsilon),
     # )
+    optimizer_spec = OptimizerSpec(
+        constructor=torch.optim.RMSprop,
+        kwargs=dict(lr=config.learning_rate, momentum=config.momentum, eps=config.epsilon)
+    )
 
     exploration_schedule = LinearSchedule(1000000, 0.1)
 
-    dqn_learn(
+    # dqn_learn(
+    #     env=env, q_func=DQN, optimizer_spec=optimizer_spec,
+    #     density=PixelBonus, cnn_kwargs=FLAGS, config=config,
+    #     exploration=exploration_schedule, stopping_criterion=stopping_criterion,
+    # )
+    test_dqn_learning(
         env=env, q_func=DQN, optimizer_spec=optimizer_spec,
         density=PixelBonus, cnn_kwargs=FLAGS, config=config,
         exploration=exploration_schedule, stopping_criterion=stopping_criterion,

@@ -137,41 +137,6 @@ class ProcessFrame84(gym.Wrapper):
         return _process_frame84(self.env.reset())
 
 
-def _process_frame42(frame):
-    """
-    modification in image quantifization and downsampling for pseudocount method
-    :param frame:
-    :return:
-    """
-    img = np.reshape(frame, [210, 160, 3]).astype(np.float32)
-    # this operation is turning an image into grayscale
-    img = img[:, :, 0] * 0.299 + img[:, :, 1] * 0.587 + img[:, :, 2] * 0.114
-    resized_screen = cv2.resize(img, (84, 110),  interpolation=cv2.INTER_LINEAR)
-    x_t = resized_screen[18:102, :]
-
-    # downsample to (42 x 42)
-    x_t = cv2.resize(x_t, (42, 42), interpolation=cv2.INTER_LINEAR)
-    down_x = np.reshape(x_t, [42, 42, 1])
-
-    # quantize image into 8 bins
-    down_x = (down_x/255.) * 7.
-
-    return down_x.astype(np.uint8)
-
-
-class ProcessFrame42(gym.Wrapper):
-    def __init__(self, env=None):
-        super(ProcessFrame42, self).__init__(env)
-        self.observation_space = spaces.Box(low=0, high=255, shape=(42, 42, 1))
-
-    def _step(self, action):
-        obs, reward, done, info = self.env.step(action)
-        return _process_frame42(obs), reward, done, info
-
-    def _reset(self):
-        return _process_frame42(self.env.reset())
-
-
 class ClippedRewardsWrapper(gym.Wrapper):
     def _step(self, action):
         obs, reward, done, info = self.env.step(action)
@@ -197,7 +162,7 @@ def wrap_deepmind(env):
         env = FireResetEnv(env)
     env = ProcessFrame84(env)
     # todo: don't clip rewards for other games (e.g. not pong)
-    # env = ClippedRewardsWrapper(env)
+    env = ClippedRewardsWrapper(env)
     return env
 
 
