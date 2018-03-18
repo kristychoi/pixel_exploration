@@ -27,8 +27,7 @@ Statistic = {
 
 
 # use GPU if available
-USE_CUDA = True
-# USE_CUDA = torch.cuda.is_available()
+USE_CUDA = torch.cuda.is_available()
 FloatTensor = torch.cuda.FloatTensor if USE_CUDA else torch.FloatTensor
 LongTensor = torch.cuda.LongTensor if USE_CUDA else torch.LongTensor
 ByteTensor = torch.cuda.ByteTensor if USE_CUDA else torch.ByteTensor

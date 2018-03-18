@@ -80,14 +80,14 @@ def main(config, env):
         return get_wrapper_by_name(env, "Monitor").get_total_steps() >= \
                config.max_timesteps
 
-    # optimizer_spec = OptimizerSpec(
-    #     constructor=torch.optim.Adam,
-    #     kwargs=dict(lr=config.learning_rate, eps=config.epsilon),
-    # )
     optimizer_spec = OptimizerSpec(
-        constructor=torch.optim.RMSprop,
-        kwargs=dict(lr=config.learning_rate, momentum=config.momentum, eps=config.epsilon)
+        constructor=torch.optim.Adam,
+        kwargs=dict(lr=config.learning_rate, eps=config.epsilon),
     )
+    # optimizer_spec = OptimizerSpec(
+    #     constructor=torch.optim.RMSprop,
+    #     kwargs=dict(lr=config.learning_rate, momentum=config.momentum, eps=config.epsilon)
+    # )
 
     exploration_schedule = LinearSchedule(1000000, 0.1)
 
