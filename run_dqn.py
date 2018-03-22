@@ -13,7 +13,7 @@ import utils
 from utils.gym_atari_wrappers import get_env, get_wrapper_by_name
 from utils.schedule import LinearSchedule
 from configs.dqn_config import Config
-from learn import OptimizerSpec, dqn_learn, test_dqn_learning
+from learn import OptimizerSpec, dqn_learn
 from utils.tf_wrapper import PixelBonus
 
 # do logging
@@ -91,12 +91,7 @@ def main(config, env):
 
     exploration_schedule = LinearSchedule(1000000, 0.1)
 
-    # dqn_learn(
-    #     env=env, q_func=DQN, optimizer_spec=optimizer_spec,
-    #     density=PixelBonus, cnn_kwargs=FLAGS, config=config,
-    #     exploration=exploration_schedule, stopping_criterion=stopping_criterion,
-    # )
-    test_dqn_learning(
+    dqn_learn(
         env=env, q_func=DQN, optimizer_spec=optimizer_spec,
         density=PixelBonus, cnn_kwargs=FLAGS, config=config,
         exploration=exploration_schedule, stopping_criterion=stopping_criterion,

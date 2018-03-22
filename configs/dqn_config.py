@@ -5,13 +5,13 @@ Config file for DQN on Atari 2600 suite
 
 class Config():
     # output config
-    output_path = "results/dqn_bankheist/"
-    # todo: actually do model checkpointing and logging
+    output_path = "results/dqn_pong/"
+    # output_path = "/Users/kristyc/Downloads/"
     model_output = output_path + "model.weights/"
-    log_path = output_path + "pixel_log.txt"
+    log_path = output_path + "test_dqn.txt"
 
     # environment
-    env_name = "BankHeistNoFrameskip-v4"
+    env_name = "PongNoFrameskip-v4"
     deep = True
     clip_grad = True
 
@@ -38,6 +38,6 @@ class Config():
     epsilon = 1e-2
 
     # epsilon-greedy
-    egreedy_exploration = False
-    mmc = True
-    bonus = True
+    egreedy_exploration = True
+    mmc = False
+    bonus = False
